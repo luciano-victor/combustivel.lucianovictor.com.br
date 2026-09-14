@@ -33,12 +33,18 @@
 
   <main class="max-w-md mx-auto p-4">
 
-    <!-- ABA 1: NOVO REGISTRO -->
+    <!-- ABA 1: FORMULÁRIO (NOVO / EDITAR) -->
     <section id="aba-novo" class="space-y-4">
       <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 shadow-xl">
-        <h2 class="text-sm font-semibold uppercase tracking-wider text-teal-400 mb-4">Novo Abastecimento</h2>
+        <div class="flex items-center justify-between mb-4">
+          <h2 id="formTitulo" class="text-sm font-semibold uppercase tracking-wider text-teal-400">Novo Abastecimento</h2>
+          <button type="button" id="btnCancelarEdicao" onclick="cancelarEdicao()" class="hidden text-xs text-rose-400 hover:underline">Cancelar Edição</button>
+        </div>
         
         <form id="formAbastecimento" class="space-y-3.5">
+          <input type="hidden" id="editRowIndex" value="">
+          <input type="hidden" id="editDataHora" value="">
+
           <div>
             <label class="block text-xs font-medium text-slate-400 mb-1">Odômetro Atual (km)</label>
             <input type="number" id="odometro" required placeholder="Ex: 167553"
@@ -97,20 +103,17 @@
       </div>
     </section>
 
-    <!-- ABA 2: HISTÓRICO -->
+    <!-- ABA 2: HISTÓRICO COM EDIÇÃO E EXCLUSÃO -->
     <section id="aba-historico" class="hidden space-y-3">
       <div class="flex items-center justify-between mb-1">
         <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">Últimos Abastecimentos</h2>
         <span id="badgeTotalRegistros" class="text-xs text-teal-400 font-semibold">0 registros</span>
       </div>
-      <div id="listaHistorico" class="space-y-2.5">
-        <!-- Itens inseridos via JavaScript -->
-      </div>
+      <div id="listaHistorico" class="space-y-2.5"></div>
     </section>
 
     <!-- ABA 3: DASHBOARD -->
     <section id="aba-dashboard" class="hidden space-y-4">
-      <!-- Grid de Indicadores Principais -->
       <div class="grid grid-cols-2 gap-3">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
           <span class="text-[11px] font-medium text-slate-400 block uppercase">Total Investido</span>
@@ -124,7 +127,6 @@
         </div>
       </div>
 
-      <!-- Gráfico: Evolução de Consumo -->
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
         <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Evolução do Consumo (km/L)</h3>
         <div class="h-44 w-full">
@@ -132,7 +134,6 @@
         </div>
       </div>
 
-      <!-- Gráfico: Gasto por Combustível -->
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
         <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Divisão por Combustível</h3>
         <div class="h-44 w-full flex justify-center">
@@ -143,12 +144,12 @@
 
   </main>
 
-  <!-- Bottom Navigation Bar -->
+  <!-- Bottom Navigation -->
   <nav class="fixed bottom-0 inset-x-0 bg-slate-950/95 backdrop-blur-lg border-t border-slate-800 max-w-md mx-auto z-50">
     <div class="grid grid-cols-3 py-2">
       <button onclick="trocarAba('novo')" id="tab-novo" class="flex flex-col items-center gap-1 text-teal-400">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-        <span class="text-[10px] font-semibold">Novo</span>
+        <span id="lblTabNovo" class="text-[10px] font-semibold">Novo</span>
       </button>
       <button onclick="trocarAba('historico')" id="tab-historico" class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
@@ -168,24 +169,30 @@
     let chartConsumoInstance = null;
     let chartCombustivelInstance = null;
 
-    // Navegação de abas
     function trocarAba(aba) {
       ['novo', 'historico', 'dashboard'].forEach(t => {
         document.getElementById(`aba-${t}`).classList.add('hidden');
         const tabBtn = document.getElementById(`tab-${t}`);
-        tabBtn.classList.remove('text-teal-400');
-        tabBtn.classList.add('text-slate-400');
+        if (tabBtn) {
+          tabBtn.classList.remove('text-teal-400');
+          tabBtn.classList.add('text-slate-400');
+        }
       });
 
-      document.getElementById(`aba-${aba}`).classList.remove('hidden');
-      const activeTab = document.getElementById(`tab-${aba}`);
-      activeTab.classList.remove('text-slate-400');
-      activeTab.classList.add('text-teal-400');
+      const abaAtiva = document.getElementById(`aba-${aba}`);
+      if (abaAtiva) abaAtiva.classList.remove('hidden');
 
-      if (aba === 'dashboard') renderizarDashboard();
+      const activeTabBtn = document.getElementById(`tab-${aba}`);
+      if (activeTabBtn) {
+        activeTabBtn.classList.remove('text-slate-400');
+        activeTabBtn.classList.add('text-teal-400');
+      }
+
+      if (aba === 'dashboard') {
+        setTimeout(() => renderizarDashboard(), 50);
+      }
     }
 
-    // Cálculos de formulário em tempo real
     const precoInput = document.getElementById('precoLitro');
     const litrosInput = document.getElementById('litros');
     const totalInput = document.getElementById('valorTotal');
@@ -200,15 +207,71 @@
     precoInput.addEventListener('input', calcularTotal);
     litrosInput.addEventListener('input', calcularTotal);
 
-    // Envio do formulário
+    // Preparar edição de item
+    function editarItem(rowIndex) {
+      const item = dadosCache.find(x => x.rowIndex === rowIndex);
+      if (!item) return;
+
+      document.getElementById('editRowIndex').value = item.rowIndex;
+      document.getElementById('editDataHora').value = item.Data || '';
+      document.getElementById('odometro').value = item.Odometro || '';
+      document.getElementById('combustivel').value = item.Combustivel || 'Gas. Aditivada';
+      document.getElementById('precoLitro').value = String(item.Preco_Litro || '').replace('.', ',');
+      document.getElementById('litros').value = String(item.Litros || '').replace('.', ',');
+      document.getElementById('valorTotal').value = String(item.Valor_Total || '').replace('.', ',');
+      document.getElementById('posto').value = item.Posto || '';
+      document.getElementById('tanqueCheio').checked = String(item.Tanque_Cheio).trim().toLowerCase() === 'sim';
+
+      document.getElementById('formTitulo').innerText = "Editar Abastecimento";
+      document.getElementById('btnSalvar').innerText = "Atualizar Registro";
+      document.getElementById('btnCancelarEdicao').classList.remove('hidden');
+      document.getElementById('lblTabNovo').innerText = "Editar";
+
+      trocarAba('novo');
+    }
+
+    function cancelarEdicao() {
+      document.getElementById('formAbastecimento').reset();
+      document.getElementById('editRowIndex').value = '';
+      document.getElementById('editDataHora').value = '';
+      document.getElementById('tanqueCheio').checked = true;
+      document.getElementById('formTitulo').innerText = "Novo Abastecimento";
+      document.getElementById('btnSalvar').innerText = "Salvar no Google Drive";
+      document.getElementById('btnCancelarEdicao').classList.add('hidden');
+      document.getElementById('lblTabNovo').innerText = "Novo";
+    }
+
+    // Exclusão de item
+    async function excluirItem(rowIndex) {
+      if (!confirm("Deseja realmente excluir este abastecimento da base?")) return;
+      try {
+        await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ acao: 'excluir', rowIndex: rowIndex })
+        });
+        setTimeout(() => carregarDados(), 1500);
+      } catch (err) {
+        alert("Erro ao excluir registro.");
+      }
+    }
+
+    // Envio (Novo ou Edição)
     document.getElementById('formAbastecimento').addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('btnSalvar');
       const status = document.getElementById('statusMsg');
+      const rowIndex = document.getElementById('editRowIndex').value;
+      const isEditing = Boolean(rowIndex);
+
       btn.disabled = true;
       btn.innerText = "Gravando na nuvem...";
 
       const payload = {
+        acao: isEditing ? 'editar' : 'salvar',
+        rowIndex: rowIndex,
+        dataHora: document.getElementById('editDataHora').value,
         odometro: document.getElementById('odometro').value,
         combustivel: document.getElementById('combustivel').value,
         precoLitro: precoInput.value,
@@ -226,13 +289,12 @@
           body: JSON.stringify(payload)
         });
 
-        status.innerText = "Abastecimento salvo com sucesso!";
+        status.innerText = isEditing ? "Registro atualizado com sucesso!" : "Abastecimento salvo com sucesso!";
         status.className = "text-center text-xs py-2 rounded-lg font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-800 block";
-        document.getElementById('formAbastecimento').reset();
-        document.getElementById('tanqueCheio').checked = true;
+        cancelarEdicao();
         setTimeout(() => carregarDados(), 1500);
       } catch (err) {
-        status.innerText = "Erro ao enviar registro.";
+        status.innerText = "Erro ao processar registro.";
         status.className = "text-center text-xs py-2 rounded-lg font-medium text-red-400 bg-red-950/40 border border-red-800 block";
       } finally {
         btn.disabled = false;
@@ -240,26 +302,28 @@
       }
     });
 
-    // Carregar dados da planilha
+    // Leitura dos dados
     async function carregarDados() {
-      if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === "") return;
+      if (!APPS_SCRIPT_URL) return;
       try {
-        const res = await fetch(APPS_SCRIPT_URL);
+        const res = await fetch(APPS_SCRIPT_URL, { redirect: 'follow' });
         const json = await res.json();
-        if (json.status === 'success') {
+        if (json.status === 'success' && Array.isArray(json.data)) {
           dadosCache = json.data;
           renderizarHistorico();
           renderizarDashboard();
         }
       } catch (err) {
-        console.error("Erro ao sincronizar base:", err);
+        console.error("Erro ao sincronizar:", err);
       }
     }
 
-    // Renderiza a lista de cartões (Histórico)
+    // Renderiza lista com botões de ação
     function renderizarHistorico() {
       const container = document.getElementById('listaHistorico');
-      document.getElementById('badgeTotalRegistros').innerText = `${dadosCache.length} registros`;
+      const badge = document.getElementById('badgeTotalRegistros');
+      if (badge) badge.innerText = `${dadosCache.length} registros`;
+      if (!container) return;
       container.innerHTML = '';
 
       const listaInvertida = [...dadosCache].reverse();
@@ -272,25 +336,32 @@
         const card = document.createElement('div');
         card.className = "bg-slate-900 border border-slate-800/90 rounded-xl p-3.5 flex items-center justify-between";
         card.innerHTML = `
-          <div>
+          <div class="flex-1 pr-2">
             <div class="flex items-center gap-2">
               <span class="text-xs font-semibold text-white">${item.Combustivel || 'Gasolina'}</span>
               ${consumoFmt ? `<span class="bg-teal-500/10 border border-teal-500/30 text-teal-400 text-[10px] font-bold px-1.5 py-0.5 rounded">${consumoFmt}</span>` : ''}
             </div>
             <p class="text-[11px] text-slate-400 mt-1">${odoFmt} km • ${item.Litros} L ${item.Posto ? `• ${item.Posto}` : ''}</p>
-          </div>
-          <div class="text-right">
-            <span class="text-sm font-bold text-white block">${valorFmt}</span>
             <span class="text-[10px] text-slate-500">${dataFmt}</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-sm font-bold text-white">${valorFmt}</span>
+            <div class="flex items-center gap-1">
+              <button onclick="editarItem(${item.rowIndex})" title="Editar" class="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-teal-400 active:scale-95 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+              </button>
+              <button onclick="excluirItem(${item.rowIndex})" title="Excluir" class="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-rose-400 active:scale-95 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
+            </div>
           </div>
         `;
         container.appendChild(card);
       });
     }
 
-    // Renderiza KPIs e Gráficos (Dashboard)
     function renderizarDashboard() {
-      if (dadosCache.length === 0) return;
+      if (!dadosCache || dadosCache.length === 0) return;
 
       let totalPago = 0;
       let totalLitros = 0;
@@ -299,17 +370,18 @@
       let splitCombustivel = { 'Gas. Comum': 0, 'Gas. Aditivada': 0, 'Etanol': 0 };
 
       dadosCache.forEach(item => {
-        const v = parseFloat(item.Valor_Total) || 0;
-        const l = parseFloat(item.Litros) || 0;
+        const v = parseFloat(String(item.Valor_Total).replace(',', '.')) || 0;
+        const l = parseFloat(String(item.Litros).replace(',', '.')) || 0;
         totalPago += v;
         totalLitros += l;
 
-        if (item.Combustivel && splitCombustivel.hasOwnProperty(item.Combustivel)) {
-          splitCombustivel[item.Combustivel] += v;
-        }
+        const comb = item.Combustivel ? item.Combustivel.trim() : '';
+        if (splitCombustivel.hasOwnProperty(comb)) splitCombustivel[comb] += v;
+        else if (comb) splitCombustivel[comb] = v;
 
-        if (item.Consumo_KmL && !isNaN(item.Consumo_KmL)) {
-          consumos.push(parseFloat(item.Consumo_KmL));
+        const c = parseFloat(String(item.Consumo_KmL).replace(',', '.'));
+        if (!isNaN(c) && c > 0) {
+          consumos.push(c);
           labels.push(String(item.Data).split(' ')[0]);
         }
       });
@@ -317,62 +389,70 @@
       const mediaConsumo = consumos.length > 0 ? (consumos.reduce((a, b) => a + b, 0) / consumos.length) : 0;
       const precoMedioLitro = totalLitros > 0 ? (totalPago / totalLitros) : 0;
 
-      document.getElementById('dashTotalPago').innerText = totalPago.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-      document.getElementById('dashTotalLitros').innerText = `${totalLitros.toFixed(1)} L abastecidos`;
-      document.getElementById('dashMediaConsumo').innerText = `${mediaConsumo.toFixed(2)} km/L`;
-      document.getElementById('dashPrecoMedio').innerText = `${precoMedioLitro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} / L médio`;
+      const elTotalPago = document.getElementById('dashTotalPago');
+      const elTotalLitros = document.getElementById('dashTotalLitros');
+      const elMediaConsumo = document.getElementById('dashMediaConsumo');
+      const elPrecoMedio = document.getElementById('dashPrecoMedio');
 
-      // Gráfico de Linha: Consumo
-      const ctxConsumo = document.getElementById('chartConsumo').getContext('2d');
-      if (chartConsumoInstance) chartConsumoInstance.destroy();
-      chartConsumoInstance = new Chart(ctxConsumo, {
-        type: 'line',
-        data: {
-          labels: labels.slice(-15),
-          datasets: [{
-            data: consumos.slice(-15),
-            borderColor: '#14b8a6',
-            backgroundColor: 'rgba(20, 184, 166, 0.1)',
-            fill: true,
-            tension: 0.3,
-            pointRadius: 3
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { display: false } },
-            y: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { color: '#1e293b' } }
-          }
-        }
-      });
+      if (elTotalPago) elTotalPago.innerText = totalPago.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      if (elTotalLitros) elTotalLitros.innerText = `${totalLitros.toFixed(1)} L abastecidos`;
+      if (elMediaConsumo) elMediaConsumo.innerText = `${mediaConsumo.toFixed(2)} km/L`;
+      if (elPrecoMedio) elPrecoMedio.innerText = `${precoMedioLitro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} / L médio`;
 
-      // Gráfico de Rosca: Combustíveis
-      const ctxComb = document.getElementById('chartCombustivel').getContext('2d');
-      if (chartCombustivelInstance) chartCombustivelInstance.destroy();
-      chartCombustivelInstance = new Chart(ctxComb, {
-        type: 'doughnut',
-        data: {
-          labels: Object.keys(splitCombustivel),
-          datasets: [{
-            data: Object.values(splitCombustivel),
-            backgroundColor: ['#0284c7', '#14b8a6', '#f59e0b'],
-            borderWidth: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } }
+      const canvasConsumo = document.getElementById('chartConsumo');
+      if (canvasConsumo) {
+        const ctxConsumo = canvasConsumo.getContext('2d');
+        if (chartConsumoInstance) chartConsumoInstance.destroy();
+        chartConsumoInstance = new Chart(ctxConsumo, {
+          type: 'line',
+          data: {
+            labels: labels.slice(-15),
+            datasets: [{
+              data: consumos.slice(-15),
+              borderColor: '#14b8a6',
+              backgroundColor: 'rgba(20, 184, 166, 0.1)',
+              fill: true,
+              tension: 0.3,
+              pointRadius: 3
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { display: false } },
+              y: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { color: '#1e293b' } }
+            }
           }
-        }
-      });
+        });
+      }
+
+      const canvasComb = document.getElementById('chartCombustivel');
+      if (canvasComb) {
+        const ctxComb = canvasComb.getContext('2d');
+        if (chartCombustivelInstance) chartCombustivelInstance.destroy();
+        chartCombustivelInstance = new Chart(ctxComb, {
+          type: 'doughnut',
+          data: {
+            labels: Object.keys(splitCombustivel),
+            datasets: [{
+              data: Object.values(splitCombustivel),
+              backgroundColor: ['#0284c7', '#14b8a6', '#f59e0b', '#8b5cf6'],
+              borderWidth: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } }
+            }
+          }
+        });
+      }
     }
 
-    // Inicialização
     window.addEventListener('DOMContentLoaded', carregarDados);
   </script>
 </body>
