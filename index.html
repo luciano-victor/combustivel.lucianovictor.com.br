@@ -162,8 +162,7 @@
   </nav>
 
   <script>
-    // Cole aqui a URL gerada na implantação do Apps Script
-    const APPS_SCRIPT_URL = "SUA_URL_DO_APPS_SCRIPT_AQUI";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby4Ims7hwmR2QOpB75Y6_QxZBfgXJorPV_SZwhJKswAu6iqMsQTEaMdsTcQtIFuNquA/exec";
 
     let dadosCache = [];
     let chartConsumoInstance = null;
@@ -243,7 +242,7 @@
 
     // Carregar dados da planilha
     async function carregarDados() {
-      if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycby4Ims7hwmR2QOpB75Y6_QxZBfgXJorPV_SZwhJKswAu6iqMsQTEaMdsTcQtIFuNquA/exec")) return;
+      if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === "") return;
       try {
         const res = await fetch(APPS_SCRIPT_URL);
         const json = await res.json();
@@ -329,7 +328,7 @@
       chartConsumoInstance = new Chart(ctxConsumo, {
         type: 'line',
         data: {
-          labels: labels.slice(-15), // últimos 15 registros com consumo
+          labels: labels.slice(-15),
           datasets: [{
             data: consumos.slice(-15),
             borderColor: '#14b8a6',
