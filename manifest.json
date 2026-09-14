@@ -1,0 +1,26 @@
+{
+  "name": "Gasparzinho Abastecimento",
+  "short_name": "Gasparzinho",
+  "description": "Controle de Abastecimento Ford Ka",
+  "start_url": "/index.html",
+  "scope": "/",
+  "id": "gasparzinho-combustivel",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1505/1505581.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1505/1505581.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
