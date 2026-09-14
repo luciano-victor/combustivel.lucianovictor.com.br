@@ -243,7 +243,7 @@
 
     // Carregar dados da planilha
     async function carregarDados() {
-      if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes(https://script.google.com/macros/s/AKfycby4Ims7hwmR2QOpB75Y6_QxZBfgXJorPV_SZwhJKswAu6iqMsQTEaMdsTcQtIFuNquA/exec)) return;
+      if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycby4Ims7hwmR2QOpB75Y6_QxZBfgXJorPV_SZwhJKswAu6iqMsQTEaMdsTcQtIFuNquA/exec")) return;
       try {
         const res = await fetch(APPS_SCRIPT_URL);
         const json = await res.json();
