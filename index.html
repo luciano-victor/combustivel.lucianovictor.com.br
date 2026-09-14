@@ -1,108 +1,196 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gasparzinho - Abastecimento</title>
+  <title>Gasparzinho | Gestão de Abastecimento</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen p-4 flex justify-center items-start">
+<body class="bg-slate-950 text-slate-100 min-h-screen pb-24 selection:bg-teal-500 selection:text-black">
 
-  <main class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl mt-4">
-    <!-- Cabeçalho -->
-    <header class="flex items-center justify-between pb-5 border-b border-slate-800">
-      <div>
-        <span class="text-xs font-semibold tracking-wider text-teal-400 uppercase">Veículo</span>
-        <h1 class="text-xl font-bold text-white">Gasparzinho <span class="text-xs text-slate-400 font-normal">(Ford Ka)</span></h1>
-      </div>
-      <div class="h-10 w-10 rounded-full bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400">
+  <!-- Topbar -->
+  <header class="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="h-9 w-9 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 font-bold">
         ⛽
       </div>
-    </header>
-
-    <!-- Formulário -->
-    <form id="fuelForm" class="mt-5 space-y-4">
-      
-      <!-- Odômetro -->
       <div>
-        <label for="odometro" class="block text-xs font-medium text-slate-400 mb-1">Odômetro Atual (km)</label>
-        <input type="number" id="odometro" required placeholder="Ex: 167553"
-          class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-400 transition">
+        <h1 class="text-base font-bold text-white tracking-tight leading-tight">Gasparzinho</h1>
+        <p class="text-[11px] text-slate-400 font-medium">Ford Ka • 1.0 Flex</p>
       </div>
+    </div>
+    <button id="btnSync" onclick="carregarDados()" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-teal-400 active:scale-95 transition">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+    </button>
+  </header>
 
-      <!-- Tipo de Combustível -->
-      <div>
-        <label for="combustivel" class="block text-xs font-medium text-slate-400 mb-1">Combustível</label>
-        <select id="combustivel" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-400 transition">
-          <option value="Gas. Comum">Gasolina Comum</option>
-          <option value="Gas. Aditivada" selected>Gasolina Aditivada</option>
-          <option value="Etanol">Etanol</option>
-        </select>
+  <main class="max-w-md mx-auto p-4">
+
+    <!-- ABA 1: NOVO REGISTRO -->
+    <section id="aba-novo" class="space-y-4">
+      <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 shadow-xl">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-teal-400 mb-4">Novo Abastecimento</h2>
+        
+        <form id="formAbastecimento" class="space-y-3.5">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Odômetro Atual (km)</label>
+            <input type="number" id="odometro" required placeholder="Ex: 167553"
+              class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-teal-400 text-sm transition">
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Combustível</label>
+            <select id="combustivel" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-teal-400 text-sm transition">
+              <option value="Gas. Aditivada" selected>Gasolina Aditivada</option>
+              <option value="Gas. Comum">Gasolina Comum</option>
+              <option value="Etanol">Etanol</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Preço / Litro (R$)</label>
+              <input type="text" inputmode="decimal" id="precoLitro" required placeholder="6,29"
+                class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-teal-400 text-sm transition">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Litros (L)</label>
+              <input type="text" inputmode="decimal" id="litros" required placeholder="35,187"
+                class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-teal-400 text-sm transition">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Valor Total (R$)</label>
+            <input type="text" inputmode="decimal" id="valorTotal" required placeholder="221,33"
+              class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-teal-400 font-semibold focus:outline-none focus:border-teal-400 text-sm transition">
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Posto / Bandeira</label>
+            <input type="text" id="posto" placeholder="Ex: Shell, Posto 202"
+              class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-teal-400 text-sm transition">
+          </div>
+
+          <div class="flex items-center justify-between p-3 bg-slate-950 border border-slate-800 rounded-xl">
+            <span class="text-xs font-medium text-slate-300">Completou o tanque?</span>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="tanqueCheio" checked class="sr-only peer">
+              <div class="w-10 h-5 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-500"></div>
+            </label>
+          </div>
+
+          <button type="submit" id="btnSalvar"
+            class="w-full mt-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-slate-950 font-bold py-3.5 rounded-xl shadow-lg shadow-teal-500/20 active:scale-[0.98] transition">
+            Salvar no Google Drive
+          </button>
+          
+          <div id="statusMsg" class="hidden text-center text-xs py-2 rounded-lg font-medium"></div>
+        </form>
       </div>
+    </section>
 
-      <!-- Grid: Preço por Litro e Litros -->
+    <!-- ABA 2: HISTÓRICO -->
+    <section id="aba-historico" class="hidden space-y-3">
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">Últimos Abastecimentos</h2>
+        <span id="badgeTotalRegistros" class="text-xs text-teal-400 font-semibold">0 registros</span>
+      </div>
+      <div id="listaHistorico" class="space-y-2.5">
+        <!-- Itens inseridos via JavaScript -->
+      </div>
+    </section>
+
+    <!-- ABA 3: DASHBOARD -->
+    <section id="aba-dashboard" class="hidden space-y-4">
+      <!-- Grid de Indicadores Principais -->
       <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label for="precoLitro" class="block text-xs font-medium text-slate-400 mb-1">Preço / Litro (R$)</label>
-          <input type="text" inputmode="decimal" id="precoLitro" required placeholder="6,29"
-            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-400 transition">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+          <span class="text-[11px] font-medium text-slate-400 block uppercase">Total Investido</span>
+          <span id="dashTotalPago" class="text-lg font-bold text-white tracking-tight mt-1 block">R$ 0,00</span>
+          <span id="dashTotalLitros" class="text-[11px] text-slate-500 block mt-0.5">0 L</span>
         </div>
-        <div>
-          <label for="litros" class="block text-xs font-medium text-slate-400 mb-1">Litros (L)</label>
-          <input type="text" inputmode="decimal" id="litros" required placeholder="35,187"
-            class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-400 transition">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+          <span class="text-[11px] font-medium text-slate-400 block uppercase">Média Geral</span>
+          <span id="dashMediaConsumo" class="text-lg font-bold text-teal-400 tracking-tight mt-1 block">0,00 km/L</span>
+          <span id="dashPrecoMedio" class="text-[11px] text-slate-500 block mt-0.5">R$ 0,00 / L</span>
         </div>
       </div>
 
-      <!-- Valor Total (Calculado ou Editável) -->
-      <div>
-        <label for="valorTotal" class="block text-xs font-medium text-slate-400 mb-1">Valor Total Pago (R$)</label>
-        <input type="text" inputmode="decimal" id="valorTotal" required placeholder="221,33"
-          class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-teal-400 font-semibold text-lg focus:outline-none focus:border-teal-400 transition">
+      <!-- Gráfico: Evolução de Consumo -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Evolução do Consumo (km/L)</h3>
+        <div class="h-44 w-full">
+          <canvas id="chartConsumo"></canvas>
+        </div>
       </div>
 
-      <!-- Posto / Bandeira -->
-      <div>
-        <label for="posto" class="block text-xs font-medium text-slate-400 mb-1">Posto / Bandeira</label>
-        <input type="text" id="posto" placeholder="Ex: Shell, Ipiranga"
-          class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-teal-400 transition">
+      <!-- Gráfico: Gasto por Combustível -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Divisão por Combustível</h3>
+        <div class="h-44 w-full flex justify-center">
+          <canvas id="chartCombustivel"></canvas>
+        </div>
       </div>
+    </section>
 
-      <!-- Toggle: Tanque Cheio -->
-      <div class="flex items-center justify-between p-3 bg-slate-950 border border-slate-800 rounded-xl">
-        <span class="text-sm font-medium text-slate-300">Completou o tanque?</span>
-        <label class="relative inline-flex items-center cursor-pointer">
-          <input type="checkbox" id="tanqueCheio" checked class="sr-only peer">
-          <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
-        </label>
-      </div>
-
-      <!-- Botão de Envio -->
-      <button type="submit" id="btnSalvar"
-        class="w-full mt-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-slate-950 font-bold py-4 rounded-xl shadow-lg shadow-teal-500/20 active:scale-[0.98] transition duration-150">
-        Salvar Abastecimento
-      </button>
-
-      <div id="statusMsg" class="hidden text-center text-sm py-2 rounded-lg font-medium"></div>
-    </form>
   </main>
 
-  <script>
-    // URL gerada na implantação do Google Apps Script
-    const SCRIPT_URL = https://script.google.com/macros/s/AKfycby4Ims7hwmR2QOpB75Y6_QxZBfgXJorPV_SZwhJKswAu6iqMsQTEaMdsTcQtIFuNquA/exec;
+  <!-- Bottom Navigation Bar -->
+  <nav class="fixed bottom-0 inset-x-0 bg-slate-950/95 backdrop-blur-lg border-t border-slate-800 max-w-md mx-auto z-50">
+    <div class="grid grid-cols-3 py-2">
+      <button onclick="trocarAba('novo')" id="tab-novo" class="flex flex-col items-center gap-1 text-teal-400">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        <span class="text-[10px] font-semibold">Novo</span>
+      </button>
+      <button onclick="trocarAba('historico')" id="tab-historico" class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+        <span class="text-[10px] font-medium">Histórico</span>
+      </button>
+      <button onclick="trocarAba('dashboard')" id="tab-dashboard" class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        <span class="text-[10px] font-medium">Dashboard</span>
+      </button>
+    </div>
+  </nav>
 
+  <script>
+    // Cole aqui a URL gerada na implantação do Apps Script
+    const APPS_SCRIPT_URL = https://script.google.com/macros/s/AKfycby4Ims7hwmR2QOpB75Y6_QxZBfgXJorPV_SZwhJKswAu6iqMsQTEaMdsTcQtIFuNquA/exec;
+
+    let dadosCache = [];
+    let chartConsumoInstance = null;
+    let chartCombustivelInstance = null;
+
+    // Navegação de abas
+    function trocarAba(aba) {
+      ['novo', 'historico', 'dashboard'].forEach(t => {
+        document.getElementById(`aba-${t}`).classList.add('hidden');
+        const tabBtn = document.getElementById(`tab-${t}`);
+        tabBtn.classList.remove('text-teal-400');
+        tabBtn.classList.add('text-slate-400');
+      });
+
+      document.getElementById(`aba-${aba}`).classList.remove('hidden');
+      const activeTab = document.getElementById(`tab-${aba}`);
+      activeTab.classList.remove('text-slate-400');
+      activeTab.classList.add('text-teal-400');
+
+      if (aba === 'dashboard') renderizarDashboard();
+    }
+
+    // Cálculos de formulário em tempo real
     const precoInput = document.getElementById('precoLitro');
     const litrosInput = document.getElementById('litros');
     const totalInput = document.getElementById('valorTotal');
-    const form = document.getElementById('fuelForm');
-    const btnSalvar = document.getElementById('btnSalvar');
-    const statusMsg = document.getElementById('statusMsg');
 
-    // Auto-cálculo de total ao digitar preço e litros
     function calcularTotal() {
       const p = parseFloat(precoInput.value.replace(',', '.'));
       const l = parseFloat(litrosInput.value.replace(',', '.'));
@@ -113,11 +201,13 @@
     precoInput.addEventListener('input', calcularTotal);
     litrosInput.addEventListener('input', calcularTotal);
 
-    // Envio para o Google Apps Script
-    form.addEventListener('submit', async (e) => {
+    // Envio do formulário
+    document.getElementById('formAbastecimento').addEventListener('submit', async (e) => {
       e.preventDefault();
-      btnSalvar.disabled = true;
-      btnSalvar.innerText = "Salvando na nuvem...";
+      const btn = document.getElementById('btnSalvar');
+      const status = document.getElementById('statusMsg');
+      btn.disabled = true;
+      btn.innerText = "Gravando na nuvem...";
 
       const payload = {
         odometro: document.getElementById('odometro').value,
@@ -130,25 +220,161 @@
       };
 
       try {
-        await fetch(SCRIPT_URL, {
+        await fetch(APPS_SCRIPT_URL, {
           method: 'POST',
-          mode: 'no-cors', // Evita bloqueios de CORS do Google Apps Script
+          mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
 
-        statusMsg.innerText = "Abastecimento salvo com sucesso no Drive!";
-        statusMsg.className = "text-center text-sm py-2 rounded-lg font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-800 block";
-        form.reset();
+        status.innerText = "Abastecimento salvo com sucesso!";
+        status.className = "text-center text-xs py-2 rounded-lg font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-800 block";
+        document.getElementById('formAbastecimento').reset();
         document.getElementById('tanqueCheio').checked = true;
+        setTimeout(() => carregarDados(), 1500);
       } catch (err) {
-        statusMsg.innerText = "Erro ao registrar. Verifique a conexão.";
-        statusMsg.className = "text-center text-sm py-2 rounded-lg font-medium text-red-400 bg-red-950/40 border border-red-800 block";
+        status.innerText = "Erro ao enviar registro.";
+        status.className = "text-center text-xs py-2 rounded-lg font-medium text-red-400 bg-red-950/40 border border-red-800 block";
       } finally {
-        btnSalvar.disabled = false;
-        btnSalvar.innerText = "Salvar Abastecimento";
+        btn.disabled = false;
+        btn.innerText = "Salvar no Google Drive";
       }
     });
+
+    // Carregar dados da planilha
+    async function carregarDados() {
+      if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("SUA_URL")) return;
+      try {
+        const res = await fetch(APPS_SCRIPT_URL);
+        const json = await res.json();
+        if (json.status === 'success') {
+          dadosCache = json.data;
+          renderizarHistorico();
+          renderizarDashboard();
+        }
+      } catch (err) {
+        console.error("Erro ao sincronizar base:", err);
+      }
+    }
+
+    // Renderiza a lista de cartões (Histórico)
+    function renderizarHistorico() {
+      const container = document.getElementById('listaHistorico');
+      document.getElementById('badgeTotalRegistros').innerText = `${dadosCache.length} registros`;
+      container.innerHTML = '';
+
+      const listaInvertida = [...dadosCache].reverse();
+      listaInvertida.forEach(item => {
+        const dataFmt = item.Data ? String(item.Data).split(' ')[0] : '-';
+        const odoFmt = item.Odometro ? Number(item.Odometro).toLocaleString('pt-BR') : '-';
+        const valorFmt = item.Valor_Total ? Number(item.Valor_Total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-';
+        const consumoFmt = item.Consumo_KmL ? `${Number(item.Consumo_KmL).toFixed(2)} km/L` : '';
+
+        const card = document.createElement('div');
+        card.className = "bg-slate-900 border border-slate-800/90 rounded-xl p-3.5 flex items-center justify-between";
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-semibold text-white">${item.Combustivel || 'Gasolina'}</span>
+              ${consumoFmt ? `<span class="bg-teal-500/10 border border-teal-500/30 text-teal-400 text-[10px] font-bold px-1.5 py-0.5 rounded">${consumoFmt}</span>` : ''}
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">${odoFmt} km • ${item.Litros} L ${item.Posto ? `• ${item.Posto}` : ''}</p>
+          </div>
+          <div class="text-right">
+            <span class="text-sm font-bold text-white block">${valorFmt}</span>
+            <span class="text-[10px] text-slate-500">${dataFmt}</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Renderiza KPIs e Gráficos (Dashboard)
+    function renderizarDashboard() {
+      if (dadosCache.length === 0) return;
+
+      let totalPago = 0;
+      let totalLitros = 0;
+      let consumos = [];
+      let labels = [];
+      let splitCombustivel = { 'Gas. Comum': 0, 'Gas. Aditivada': 0, 'Etanol': 0 };
+
+      dadosCache.forEach(item => {
+        const v = parseFloat(item.Valor_Total) || 0;
+        const l = parseFloat(item.Litros) || 0;
+        totalPago += v;
+        totalLitros += l;
+
+        if (item.Combustivel && splitCombustivel.hasOwnProperty(item.Combustivel)) {
+          splitCombustivel[item.Combustivel] += v;
+        }
+
+        if (item.Consumo_KmL && !isNaN(item.Consumo_KmL)) {
+          consumos.push(parseFloat(item.Consumo_KmL));
+          labels.push(String(item.Data).split(' ')[0]);
+        }
+      });
+
+      const mediaConsumo = consumos.length > 0 ? (consumos.reduce((a, b) => a + b, 0) / consumos.length) : 0;
+      const precoMedioLitro = totalLitros > 0 ? (totalPago / totalLitros) : 0;
+
+      document.getElementById('dashTotalPago').innerText = totalPago.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      document.getElementById('dashTotalLitros').innerText = `${totalLitros.toFixed(1)} L abastecidos`;
+      document.getElementById('dashMediaConsumo').innerText = `${mediaConsumo.toFixed(2)} km/L`;
+      document.getElementById('dashPrecoMedio').innerText = `${precoMedioLitro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} / L médio`;
+
+      // Gráfico de Linha: Consumo
+      const ctxConsumo = document.getElementById('chartConsumo').getContext('2d');
+      if (chartConsumoInstance) chartConsumoInstance.destroy();
+      chartConsumoInstance = new Chart(ctxConsumo, {
+        type: 'line',
+        data: {
+          labels: labels.slice(-15), // últimos 15 registros com consumo
+          datasets: [{
+            data: consumos.slice(-15),
+            borderColor: '#14b8a6',
+            backgroundColor: 'rgba(20, 184, 166, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { display: false } },
+            y: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { color: '#1e293b' } }
+          }
+        }
+      });
+
+      // Gráfico de Rosca: Combustíveis
+      const ctxComb = document.getElementById('chartCombustivel').getContext('2d');
+      if (chartCombustivelInstance) chartCombustivelInstance.destroy();
+      chartCombustivelInstance = new Chart(ctxComb, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(splitCombustivel),
+          datasets: [{
+            data: Object.values(splitCombustivel),
+            backgroundColor: ['#0284c7', '#14b8a6', '#f59e0b'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    // Inicialização
+    window.addEventListener('DOMContentLoaded', carregarDados);
   </script>
 </body>
 </html>
