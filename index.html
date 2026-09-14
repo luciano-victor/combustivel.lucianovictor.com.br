@@ -2,8 +2,17 @@
 <html lang="pt-BR" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gasparzinho | Gestão de Abastecimento</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Gestão de Abastecimento</title>
+  
+  <!-- Configurações PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#020617">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1505/1505581.png">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -15,18 +24,20 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen pb-24 selection:bg-teal-500 selection:text-black">
 
-  <!-- Topbar -->
-  <header class="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 py-3 flex items-center justify-between">
+  <!-- Topbar com Seletor Dinâmico de Carros -->
+  <header class="sticky top-0 z-40 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/80 px-4 py-3 flex items-center justify-between">
     <div class="flex items-center gap-3">
       <div class="h-9 w-9 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 font-bold">
-        ⛽
+        🚗
       </div>
       <div>
-        <h1 class="text-base font-bold text-white tracking-tight leading-tight">Gasparzinho</h1>
-        <p class="text-[11px] text-slate-400 font-medium">Ford Ka • 1.0 Flex</p>
+        <select id="selectVeiculoAtivo" onchange="trocarVeiculoAtivo(this.value)" class="bg-transparent font-bold text-white text-base focus:outline-none cursor-pointer">
+          <option value="Gasparzinho" class="bg-slate-900 text-white">Gasparzinho</option>
+        </select>
+        <p id="subtituloVeiculo" class="text-[11px] text-slate-400">Ford Ka • 1.0 Flex</p>
       </div>
     </div>
-    <button id="btnSync" onclick="carregarDados()" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-teal-400 active:scale-95 transition">
+    <button onclick="carregarDados()" class="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-teal-400 active:scale-95 transition">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
     </button>
   </header>
@@ -94,7 +105,7 @@
           </div>
 
           <button type="submit" id="btnSalvar"
-            class="w-full mt-2 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-slate-950 font-bold py-3.5 rounded-xl shadow-lg shadow-teal-500/20 active:scale-[0.98] transition">
+            class="w-full mt-2 bg-gradient-to-r from-teal-500 to-emerald-500 text-slate-950 font-bold py-3.5 rounded-xl shadow-lg shadow-teal-500/20 active:scale-[0.98] transition">
             Salvar no Google Drive
           </button>
           
@@ -114,6 +125,17 @@
 
     <!-- ABA 3: DASHBOARD -->
     <section id="aba-dashboard" class="hidden space-y-4">
+      <!-- Card Última Média -->
+      <div class="bg-gradient-to-br from-teal-950/60 via-slate-900 to-slate-900 border border-teal-500/30 rounded-2xl p-4 shadow-lg flex items-center justify-between">
+        <div>
+          <span class="text-[11px] font-semibold text-teal-400 tracking-wider uppercase block">Última Média</span>
+          <span id="dashUltimaMedia" class="text-2xl font-black text-white tracking-tight mt-0.5 block">-- km/L</span>
+          <span id="dashUltimaData" class="text-[11px] text-slate-400 block mt-0.5">Sem registros recentes</span>
+        </div>
+        <div class="h-12 w-12 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-xl text-teal-400">⚡</div>
+      </div>
+
+      <!-- KPIs Gerais -->
       <div class="grid grid-cols-2 gap-3">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
           <span class="text-[11px] font-medium text-slate-400 block uppercase">Total Investido</span>
@@ -127,26 +149,82 @@
         </div>
       </div>
 
+      <!-- Gráfico de Consumo -->
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
         <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Evolução do Consumo (km/L)</h3>
-        <div class="h-44 w-full">
-          <canvas id="chartConsumo"></canvas>
-        </div>
+        <div class="h-44 w-full"><canvas id="chartConsumo"></canvas></div>
       </div>
 
+      <!-- Gráfico de Combustível -->
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
         <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Divisão por Combustível</h3>
-        <div class="h-44 w-full flex justify-center">
-          <canvas id="chartCombustivel"></canvas>
-        </div>
+        <div class="h-44 w-full flex justify-center"><canvas id="chartCombustivel"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ABA 4: GERENCIAR VEÍCULOS -->
+    <section id="aba-veiculos" class="hidden space-y-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-teal-400 mb-4">Cadastrar Novo Veículo</h2>
+        
+        <form id="formVeiculo" class="space-y-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Apelido / Nome do Veículo</label>
+            <input type="text" id="vNome" required placeholder="Ex: Gasparzinho, Segundo Carro"
+              class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-teal-400 text-sm">
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Marca</label>
+              <input type="text" id="vMarca" required placeholder="Ex: Ford, Chevrolet"
+                class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-teal-400 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Modelo</label>
+              <input type="text" id="vModelo" required placeholder="Ex: Ka, Onix"
+                class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-teal-400 text-sm">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Placa</label>
+              <input type="text" id="vPlaca" placeholder="QFR7E74"
+                class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-teal-400 text-sm uppercase">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Ano</label>
+              <input type="number" id="vAno" placeholder="2019"
+                class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-teal-400 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-400 mb-1">Tanque (L)</label>
+              <input type="number" id="vTanque" placeholder="51"
+                class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-teal-400 text-sm">
+            </div>
+          </div>
+
+          <button type="submit" id="btnSalvarVeiculo"
+            class="w-full mt-3 bg-teal-500 hover:bg-teal-600 text-slate-950 font-bold py-3.5 rounded-xl shadow-lg shadow-teal-500/20 active:scale-[0.98] transition">
+            Criar Veículo e Nova Aba
+          </button>
+          
+          <div id="statusMsgVeiculo" class="hidden text-center text-xs py-2 rounded-lg font-medium"></div>
+        </form>
+      </div>
+
+      <div class="space-y-2">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Veículos Registrados</h3>
+        <div id="listaCardsVeiculos" class="space-y-2"></div>
       </div>
     </section>
 
   </main>
 
-  <!-- Bottom Navigation -->
+  <!-- Navegação Inferior -->
   <nav class="fixed bottom-0 inset-x-0 bg-slate-950/95 backdrop-blur-lg border-t border-slate-800 max-w-md mx-auto z-50">
-    <div class="grid grid-cols-3 py-2">
+    <div class="grid grid-cols-4 py-2">
       <button onclick="trocarAba('novo')" id="tab-novo" class="flex flex-col items-center gap-1 text-teal-400">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
         <span id="lblTabNovo" class="text-[10px] font-semibold">Novo</span>
@@ -157,21 +235,31 @@
       </button>
       <button onclick="trocarAba('dashboard')" id="tab-dashboard" class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-        <span class="text-[10px] font-medium">Dashboard</span>
+        <span class="text-[10px] font-medium">Painel</span>
+      </button>
+      <button onclick="trocarAba('veiculos')" id="tab-veiculos" class="flex flex-col items-center gap-1 text-slate-400 hover:text-slate-200">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+        <span class="text-[10px] font-medium">Veículos</span>
       </button>
     </div>
   </nav>
 
   <script>
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby4Ims7hwmR2QOpB75Y6_QxZBfgXJorPV_SZwhJKswAu6iqMsQTEaMdsTcQtIFuNquA/exec";
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 
+    // Endpoint configurado com a implantação atual
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyNSPeQA-HPZKaZqhzBJd9WwmYG9UYBdLSW-oEiO2aRmYfYIiJy1Oem06JnyKflhj5z/exec";
+
+    let veiculoAtivo = "Gasparzinho";
+    let listaVeiculos = [];
     let dadosCache = [];
     let chartConsumoInstance = null;
     let chartCombustivelInstance = null;
 
     function trocarAba(aba) {
-      ['novo', 'historico', 'dashboard'].forEach(t => {
-        document.getElementById(`aba-${t}`).classList.add('hidden');
+      ['novo', 'historico', 'dashboard', 'veiculos'].forEach(t => {
+        const el = document.getElementById(`aba-${t}`);
+        if (el) el.classList.add('hidden');
         const tabBtn = document.getElementById(`tab-${t}`);
         if (tabBtn) {
           tabBtn.classList.remove('text-teal-400');
@@ -188,9 +276,17 @@
         activeTabBtn.classList.add('text-teal-400');
       }
 
-      if (aba === 'dashboard') {
-        setTimeout(() => renderizarDashboard(), 50);
+      if (aba === 'dashboard') setTimeout(() => renderizarDashboard(), 50);
+    }
+
+    function trocarVeiculoAtivo(nome) {
+      veiculoAtivo = nome;
+      const v = listaVeiculos.find(x => x.Nome === nome);
+      if (v) {
+        document.getElementById('subtituloVeiculo').innerText = `${v.Marca} ${v.Modelo} • ${v.Ano || ''}`;
       }
+      cancelarEdicao();
+      carregarDados();
     }
 
     const precoInput = document.getElementById('precoLitro');
@@ -200,14 +296,291 @@
     function calcularTotal() {
       const p = parseFloat(precoInput.value.replace(',', '.'));
       const l = parseFloat(litrosInput.value.replace(',', '.'));
-      if (!isNaN(p) && !isNaN(l)) {
-        totalInput.value = (p * l).toFixed(2).replace('.', ',');
+      if (!isNaN(p) && !isNaN(l)) totalInput.value = (p * l).toFixed(2).replace('.', ',');
+    }
+    if (precoInput && litrosInput) {
+      precoInput.addEventListener('input', calcularTotal);
+      litrosInput.addEventListener('input', calcularTotal);
+    }
+
+    // Formulário de Abastecimento
+    document.getElementById('formAbastecimento').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btnSalvar');
+      const status = document.getElementById('statusMsg');
+      const rowIndex = document.getElementById('editRowIndex').value;
+      const isEditing = Boolean(rowIndex);
+
+      btn.disabled = true;
+      btn.innerText = "Gravando na nuvem...";
+
+      const payload = {
+        tipo: 'abastecimento',
+        veiculo: veiculoAtivo,
+        acao: isEditing ? 'editar' : 'salvar',
+        rowIndex: rowIndex,
+        dataHora: document.getElementById('editDataHora').value,
+        odometro: document.getElementById('odometro').value,
+        combustivel: document.getElementById('combustivel').value,
+        precoLitro: precoInput.value,
+        litros: litrosInput.value,
+        valorTotal: totalInput.value,
+        tanqueCheio: document.getElementById('tanqueCheio').checked,
+        posto: document.getElementById('posto').value
+      };
+
+      try {
+        await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        status.innerText = isEditing ? "Registro atualizado!" : "Abastecimento gravado!";
+        status.className = "text-center text-xs py-2 rounded-lg font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-800 block";
+        cancelarEdicao();
+        setTimeout(() => carregarDados(), 1500);
+      } catch (err) {
+        status.innerText = "Erro ao enviar registro.";
+        status.className = "text-center text-xs py-2 rounded-lg font-medium text-red-400 bg-red-950/40 border border-red-800 block";
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Salvar no Google Drive";
+      }
+    });
+
+    // Formulário de Novo Veículo
+    document.getElementById('formVeiculo').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btnSalvarVeiculo');
+      const status = document.getElementById('statusMsgVeiculo');
+      btn.disabled = true;
+      btn.innerText = "Criando aba no Drive...";
+
+      const payload = {
+        tipo: 'veiculo',
+        nome: document.getElementById('vNome').value,
+        marca: document.getElementById('vMarca').value,
+        modelo: document.getElementById('vModelo').value,
+        placa: document.getElementById('vPlaca').value,
+        ano: document.getElementById('vAno').value,
+        volumeTanque: document.getElementById('vTanque').value
+      };
+
+      try {
+        await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        status.innerText = "Veículo criado e nova aba estruturada!";
+        status.className = "text-center text-xs py-2 rounded-lg font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-800 block";
+        document.getElementById('formVeiculo').reset();
+        setTimeout(() => carregarVeiculos(), 1500);
+      } catch (err) {
+        status.innerText = "Erro ao criar veículo.";
+        status.className = "text-center text-xs py-2 rounded-lg font-medium text-red-400 bg-red-950/40 border border-red-800 block";
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Criar Veículo e Nova Aba";
+      }
+    });
+
+    // Carregar Lista de Veículos
+    async function carregarVeiculos() {
+      try {
+        const res = await fetch(`${APPS_SCRIPT_URL}?action=veiculos`, { redirect: 'follow' });
+        const json = await res.json();
+        if (json.status === 'success' && Array.isArray(json.data) && json.data.length > 0) {
+          listaVeiculos = json.data;
+          renderizarSelectVeiculos();
+          renderizarCardsVeiculos();
+        }
+      } catch (err) {
+        console.error("Erro ao carregar veículos:", err);
       }
     }
-    precoInput.addEventListener('input', calcularTotal);
-    litrosInput.addEventListener('input', calcularTotal);
 
-    // Preparar edição de item
+    function renderizarSelectVeiculos() {
+      const select = document.getElementById('selectVeiculoAtivo');
+      select.innerHTML = '';
+      listaVeiculos.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.Nome;
+        opt.innerText = v.Nome;
+        opt.className = "bg-slate-900 text-white";
+        if (v.Nome === veiculoAtivo) opt.selected = true;
+        select.appendChild(opt);
+      });
+      trocarVeiculoAtivo(veiculoAtivo);
+    }
+
+    function renderizarCardsVeiculos() {
+      const container = document.getElementById('listaCardsVeiculos');
+      container.innerHTML = '';
+      listaVeiculos.forEach(v => {
+        const card = document.createElement('div');
+        card.className = "bg-slate-950 border border-slate-800 p-3.5 rounded-xl flex items-center justify-between";
+        card.innerHTML = `
+          <div>
+            <span class="text-sm font-bold text-white block">${v.Nome}</span>
+            <p class="text-xs text-slate-400">${v.Marca} ${v.Modelo} • ${v.Ano || '-'} • Tanque: ${v.Volume_Tanque || '-'}L</p>
+          </div>
+          <span class="text-xs font-mono bg-slate-800 text-teal-400 px-2 py-1 rounded">${v.Placa || 'SEM PLACA'}</span>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Carregar Lançamentos do Veículo Selecionado
+    async function carregarDados() {
+      try {
+        const res = await fetch(`${APPS_SCRIPT_URL}?veiculo=${encodeURIComponent(veiculoAtivo)}`, { redirect: 'follow' });
+        const json = await res.json();
+        if (json.status === 'success' && Array.isArray(json.data)) {
+          dadosCache = json.data;
+          renderizarHistorico();
+          renderizarDashboard();
+        }
+      } catch (err) {
+        console.error("Erro ao sincronizar dados:", err);
+      }
+    }
+
+    function renderizarHistorico() {
+      const container = document.getElementById('listaHistorico');
+      const badge = document.getElementById('badgeTotalRegistros');
+      if (badge) badge.innerText = `${dadosCache.length} registros`;
+      if (!container) return;
+      container.innerHTML = '';
+
+      if (dadosCache.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">Nenhum abastecimento registrado para este veículo.</p>';
+        return;
+      }
+
+      const listaInvertida = [...dadosCache].reverse();
+      listaInvertida.forEach(item => {
+        const dataFmt = item.Data ? String(item.Data).split(' ')[0] : '-';
+        const odoFmt = item.Odometro ? Number(item.Odometro).toLocaleString('pt-BR') : '-';
+        const valorFmt = item.Valor_Total ? Number(item.Valor_Total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-';
+        const consumoFmt = item.Consumo_KmL ? `${Number(item.Consumo_KmL).toFixed(2)} km/L` : '';
+
+        const card = document.createElement('div');
+        card.className = "bg-slate-900 border border-slate-800/90 rounded-xl p-3.5 flex items-center justify-between";
+        card.innerHTML = `
+          <div class="flex-1 pr-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-semibold text-white">${item.Combustivel || 'Gasolina'}</span>
+              ${consumoFmt ? `<span class="bg-teal-500/10 border border-teal-500/30 text-teal-400 text-[10px] font-bold px-1.5 py-0.5 rounded">${consumoFmt}</span>` : ''}
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">${odoFmt} km • ${item.Litros} L ${item.Posto ? `• ${item.Posto}` : ''}</p>
+            <span class="text-[10px] text-slate-500">${dataFmt}</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-sm font-bold text-white">${valorFmt}</span>
+            <div class="flex items-center gap-1">
+              <button onclick="editarItem(${item.rowIndex})" class="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-teal-400 active:scale-95 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+              </button>
+              <button onclick="excluirItem(${item.rowIndex})" class="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-rose-400 active:scale-95 transition">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+              </button>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderizarDashboard() {
+      let totalPago = 0, totalLitros = 0, consumos = [], labels = [];
+      let splitCombustivel = { 'Gas. Comum': 0, 'Gas. Aditivada': 0, 'Etanol': 0 };
+      let ultimoConsumoVal = null, ultimaDataConsumo = '';
+
+      dadosCache.forEach(item => {
+        const v = parseFloat(String(item.Valor_Total).replace(',', '.')) || 0;
+        const l = parseFloat(String(item.Litros).replace(',', '.')) || 0;
+        totalPago += v;
+        totalLitros += l;
+
+        const comb = item.Combustivel ? item.Combustivel.trim() : '';
+        if (splitCombustivel.hasOwnProperty(comb)) splitCombustivel[comb] += v;
+        else if (comb) splitCombustivel[comb] = v;
+
+        const c = parseFloat(String(item.Consumo_KmL).replace(',', '.'));
+        if (!isNaN(c) && c > 0) {
+          consumos.push(c);
+          labels.push(String(item.Data).split(' ')[0]);
+          ultimoConsumoVal = c;
+          ultimaDataConsumo = String(item.Data).split(' ')[0];
+        }
+      });
+
+      const mediaConsumo = consumos.length > 0 ? (consumos.reduce((a, b) => a + b, 0) / consumos.length) : 0;
+      const precoMedioLitro = totalLitros > 0 ? (totalPago / totalLitros) : 0;
+
+      const elUltimaMedia = document.getElementById('dashUltimaMedia');
+      const elUltimaData = document.getElementById('dashUltimaData');
+      if (elUltimaMedia) {
+        elUltimaMedia.innerText = ultimoConsumoVal ? `${ultimoConsumoVal.toFixed(2)} km/L` : '-- km/L';
+        elUltimaData.innerText = ultimaDataConsumo ? `Abastecimento em ${ultimaDataConsumo}` : 'Sem registros recentes';
+      }
+
+      document.getElementById('dashTotalPago').innerText = totalPago.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      document.getElementById('dashTotalLitros').innerText = `${totalLitros.toFixed(1)} L abastecidos`;
+      document.getElementById('dashMediaConsumo').innerText = `${mediaConsumo.toFixed(2)} km/L`;
+      document.getElementById('dashPrecoMedio').innerText = `${precoMedioLitro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} / L médio`;
+
+      const ctxConsumo = document.getElementById('chartConsumo').getContext('2d');
+      if (chartConsumoInstance) chartConsumoInstance.destroy();
+      chartConsumoInstance = new Chart(ctxConsumo, {
+        type: 'line',
+        data: {
+          labels: labels.slice(-15),
+          datasets: [{
+            data: consumos.slice(-15),
+            borderColor: '#14b8a6',
+            backgroundColor: 'rgba(20, 184, 166, 0.1)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { display: false } },
+            y: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { color: '#1e293b' } }
+          }
+        }
+      });
+
+      const ctxComb = document.getElementById('chartCombustivel').getContext('2d');
+      if (chartCombustivelInstance) chartCombustivelInstance.destroy();
+      chartCombustivelInstance = new Chart(ctxComb, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(splitCombustivel),
+          datasets: [{
+            data: Object.values(splitCombustivel),
+            backgroundColor: ['#0284c7', '#14b8a6', '#f59e0b', '#8b5cf6'],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } } }
+        }
+      });
+    }
+
     function editarItem(rowIndex) {
       const item = dadosCache.find(x => x.rowIndex === rowIndex);
       if (!item) return;
@@ -241,15 +614,14 @@
       document.getElementById('lblTabNovo').innerText = "Novo";
     }
 
-    // Exclusão de item
     async function excluirItem(rowIndex) {
-      if (!confirm("Deseja realmente excluir este abastecimento da base?")) return;
+      if (!confirm("Deseja excluir este abastecimento da base?")) return;
       try {
         await fetch(APPS_SCRIPT_URL, {
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ acao: 'excluir', rowIndex: rowIndex })
+          body: JSON.stringify({ tipo: 'abastecimento', veiculo: veiculoAtivo, acao: 'excluir', rowIndex: rowIndex })
         });
         setTimeout(() => carregarDados(), 1500);
       } catch (err) {
@@ -257,203 +629,9 @@
       }
     }
 
-    // Envio (Novo ou Edição)
-    document.getElementById('formAbastecimento').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('btnSalvar');
-      const status = document.getElementById('statusMsg');
-      const rowIndex = document.getElementById('editRowIndex').value;
-      const isEditing = Boolean(rowIndex);
-
-      btn.disabled = true;
-      btn.innerText = "Gravando na nuvem...";
-
-      const payload = {
-        acao: isEditing ? 'editar' : 'salvar',
-        rowIndex: rowIndex,
-        dataHora: document.getElementById('editDataHora').value,
-        odometro: document.getElementById('odometro').value,
-        combustivel: document.getElementById('combustivel').value,
-        precoLitro: precoInput.value,
-        litros: litrosInput.value,
-        valorTotal: totalInput.value,
-        tanqueCheio: document.getElementById('tanqueCheio').checked,
-        posto: document.getElementById('posto').value
-      };
-
-      try {
-        await fetch(APPS_SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        status.innerText = isEditing ? "Registro atualizado com sucesso!" : "Abastecimento salvo com sucesso!";
-        status.className = "text-center text-xs py-2 rounded-lg font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-800 block";
-        cancelarEdicao();
-        setTimeout(() => carregarDados(), 1500);
-      } catch (err) {
-        status.innerText = "Erro ao processar registro.";
-        status.className = "text-center text-xs py-2 rounded-lg font-medium text-red-400 bg-red-950/40 border border-red-800 block";
-      } finally {
-        btn.disabled = false;
-        btn.innerText = "Salvar no Google Drive";
-      }
+    window.addEventListener('DOMContentLoaded', () => {
+      carregarVeiculos();
     });
-
-    // Leitura dos dados
-    async function carregarDados() {
-      if (!APPS_SCRIPT_URL) return;
-      try {
-        const res = await fetch(APPS_SCRIPT_URL, { redirect: 'follow' });
-        const json = await res.json();
-        if (json.status === 'success' && Array.isArray(json.data)) {
-          dadosCache = json.data;
-          renderizarHistorico();
-          renderizarDashboard();
-        }
-      } catch (err) {
-        console.error("Erro ao sincronizar:", err);
-      }
-    }
-
-    // Renderiza lista com botões de ação
-    function renderizarHistorico() {
-      const container = document.getElementById('listaHistorico');
-      const badge = document.getElementById('badgeTotalRegistros');
-      if (badge) badge.innerText = `${dadosCache.length} registros`;
-      if (!container) return;
-      container.innerHTML = '';
-
-      const listaInvertida = [...dadosCache].reverse();
-      listaInvertida.forEach(item => {
-        const dataFmt = item.Data ? String(item.Data).split(' ')[0] : '-';
-        const odoFmt = item.Odometro ? Number(item.Odometro).toLocaleString('pt-BR') : '-';
-        const valorFmt = item.Valor_Total ? Number(item.Valor_Total).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '-';
-        const consumoFmt = item.Consumo_KmL ? `${Number(item.Consumo_KmL).toFixed(2)} km/L` : '';
-
-        const card = document.createElement('div');
-        card.className = "bg-slate-900 border border-slate-800/90 rounded-xl p-3.5 flex items-center justify-between";
-        card.innerHTML = `
-          <div class="flex-1 pr-2">
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-semibold text-white">${item.Combustivel || 'Gasolina'}</span>
-              ${consumoFmt ? `<span class="bg-teal-500/10 border border-teal-500/30 text-teal-400 text-[10px] font-bold px-1.5 py-0.5 rounded">${consumoFmt}</span>` : ''}
-            </div>
-            <p class="text-[11px] text-slate-400 mt-1">${odoFmt} km • ${item.Litros} L ${item.Posto ? `• ${item.Posto}` : ''}</p>
-            <span class="text-[10px] text-slate-500">${dataFmt}</span>
-          </div>
-          <div class="flex items-center gap-3">
-            <span class="text-sm font-bold text-white">${valorFmt}</span>
-            <div class="flex items-center gap-1">
-              <button onclick="editarItem(${item.rowIndex})" title="Editar" class="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-teal-400 active:scale-95 transition">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-              </button>
-              <button onclick="excluirItem(${item.rowIndex})" title="Excluir" class="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-rose-400 active:scale-95 transition">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-              </button>
-            </div>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    function renderizarDashboard() {
-      if (!dadosCache || dadosCache.length === 0) return;
-
-      let totalPago = 0;
-      let totalLitros = 0;
-      let consumos = [];
-      let labels = [];
-      let splitCombustivel = { 'Gas. Comum': 0, 'Gas. Aditivada': 0, 'Etanol': 0 };
-
-      dadosCache.forEach(item => {
-        const v = parseFloat(String(item.Valor_Total).replace(',', '.')) || 0;
-        const l = parseFloat(String(item.Litros).replace(',', '.')) || 0;
-        totalPago += v;
-        totalLitros += l;
-
-        const comb = item.Combustivel ? item.Combustivel.trim() : '';
-        if (splitCombustivel.hasOwnProperty(comb)) splitCombustivel[comb] += v;
-        else if (comb) splitCombustivel[comb] = v;
-
-        const c = parseFloat(String(item.Consumo_KmL).replace(',', '.'));
-        if (!isNaN(c) && c > 0) {
-          consumos.push(c);
-          labels.push(String(item.Data).split(' ')[0]);
-        }
-      });
-
-      const mediaConsumo = consumos.length > 0 ? (consumos.reduce((a, b) => a + b, 0) / consumos.length) : 0;
-      const precoMedioLitro = totalLitros > 0 ? (totalPago / totalLitros) : 0;
-
-      const elTotalPago = document.getElementById('dashTotalPago');
-      const elTotalLitros = document.getElementById('dashTotalLitros');
-      const elMediaConsumo = document.getElementById('dashMediaConsumo');
-      const elPrecoMedio = document.getElementById('dashPrecoMedio');
-
-      if (elTotalPago) elTotalPago.innerText = totalPago.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-      if (elTotalLitros) elTotalLitros.innerText = `${totalLitros.toFixed(1)} L abastecidos`;
-      if (elMediaConsumo) elMediaConsumo.innerText = `${mediaConsumo.toFixed(2)} km/L`;
-      if (elPrecoMedio) elPrecoMedio.innerText = `${precoMedioLitro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} / L médio`;
-
-      const canvasConsumo = document.getElementById('chartConsumo');
-      if (canvasConsumo) {
-        const ctxConsumo = canvasConsumo.getContext('2d');
-        if (chartConsumoInstance) chartConsumoInstance.destroy();
-        chartConsumoInstance = new Chart(ctxConsumo, {
-          type: 'line',
-          data: {
-            labels: labels.slice(-15),
-            datasets: [{
-              data: consumos.slice(-15),
-              borderColor: '#14b8a6',
-              backgroundColor: 'rgba(20, 184, 166, 0.1)',
-              fill: true,
-              tension: 0.3,
-              pointRadius: 3
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-              x: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { display: false } },
-              y: { ticks: { color: '#64748b', font: { size: 9 } }, grid: { color: '#1e293b' } }
-            }
-          }
-        });
-      }
-
-      const canvasComb = document.getElementById('chartCombustivel');
-      if (canvasComb) {
-        const ctxComb = canvasComb.getContext('2d');
-        if (chartCombustivelInstance) chartCombustivelInstance.destroy();
-        chartCombustivelInstance = new Chart(ctxComb, {
-          type: 'doughnut',
-          data: {
-            labels: Object.keys(splitCombustivel),
-            datasets: [{
-              data: Object.values(splitCombustivel),
-              backgroundColor: ['#0284c7', '#14b8a6', '#f59e0b', '#8b5cf6'],
-              borderWidth: 0
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { position: 'bottom', labels: { color: '#94a3b8', boxWidth: 10, font: { size: 10 } } }
-            }
-          }
-        });
-      }
-    }
-
-    window.addEventListener('DOMContentLoaded', carregarDados);
   </script>
 </body>
 </html>
