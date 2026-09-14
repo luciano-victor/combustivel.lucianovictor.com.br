@@ -163,7 +163,7 @@
 
   <script>
     // Cole aqui a URL gerada na implantação do Apps Script
-    const APPS_SCRIPT_URL = https://script.google.com/macros/s/AKfycby4Ims7hwmR2QOpB75Y6_QxZBfgXJorPV_SZwhJKswAu6iqMsQTEaMdsTcQtIFuNquA/exec;
+    const APPS_SCRIPT_URL = "SUA_URL_DO_APPS_SCRIPT_AQUI";
 
     let dadosCache = [];
     let chartConsumoInstance = null;
@@ -243,7 +243,7 @@
 
     // Carregar dados da planilha
     async function carregarDados() {
-      if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes("SUA_URL")) return;
+      if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes(https://script.google.com/macros/s/AKfycby4Ims7hwmR2QOpB75Y6_QxZBfgXJorPV_SZwhJKswAu6iqMsQTEaMdsTcQtIFuNquA/exec)) return;
       try {
         const res = await fetch(APPS_SCRIPT_URL);
         const json = await res.json();
